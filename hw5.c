@@ -8,13 +8,11 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define STR "hello\n"
-
 int main(int argc, char* argv[]){
 	bool enable_h = false, enable_m = false, enable_t = false;
-	int count = 1;
-	char* d_arg = "_rev0";
+	char* d_arg = NULL;
 	int rev = 0;
+	char buffer[50];
 	int opt = getopt(argc, argv, "hd:mt");
 	while(opt != -1){
 		switch(opt){
@@ -46,15 +44,15 @@ int main(int argc, char* argv[]){
 	const size_t size = 5;
 	char d[size];
 	char* p;
+	sprintf(buffer, "_rev%d",rev);
 	int x, num_bytes_read = 1;
-	int backup = open(d_arg,  O_RDWR | O_CREAT | O_TRUNC, 
+	int backup = open(buffer,  O_RDWR | O_CREAT | O_TRUNC, 
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 	while(num_bytes_read != 0){
 		num_bytes_read = read(y, d, size);
 		write(backup, d, num_bytes_read);
 	}
-	d_arg = "_rev" + count;
-	printf("%s\n", d_arg);
+	rev++;
 	close(y);
 	close(backup);
 	while(1){
@@ -62,7 +60,7 @@ int main(int argc, char* argv[]){
 		for(p = data; p < data + x;){
 			struct inotify_event* event = (struct inotify_event*)p;
 			if((event->mask & IN_MODIFY) != 0){
-				backup = open(d_arg, O_RDWR | O_CREAT | O_TRUNC, 
+				backup = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 
 					S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 				num_bytes_read = 1;
 				printf("The file has been modified.\n");
@@ -73,9 +71,8 @@ int main(int argc, char* argv[]){
 				}
 				close(y);
 				close(backup);
-				count++;
-				d_arg = "_rev" + count;
-				printf("%s\n", d_arg);
+				rev++;
+				sprintf(buffer, "_rev%d",rev);
 			}
 			p += sizeof(struct inotify_event) + event->len;
 		}
