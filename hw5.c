@@ -15,15 +15,6 @@ int main(int argc, char* argv[]){
 	int count = 1;
 	char* d_arg = "_rev0";
 	int rev = 0;
-	char* file = argv[1];
-	printf("%s\n",file);
-	int fd = inotify_init();
-	int wd = inotify_add_watch(fd, file, IN_MODIFY);
-	//int fd = open(file, O_RDWR);
-	if(fd == -1){
-		perror("open");
-		return EXIT_FAILURE;
-	}
 	int opt = getopt(argc, argv, "hd:mt");
 	while(opt != -1){
 		switch(opt){
@@ -42,13 +33,20 @@ int main(int argc, char* argv[]){
 		}
 		opt = getopt(argc, argv, "hd:mt");
 	}
+	char* file = argv[optind];
+	int fd = inotify_init();
+	int wd = inotify_add_watch(fd, file, IN_MODIFY);
+	if(wd == -1){
+		perror("inotify_add_watch");
+		return EXIT_FAILURE;
+	}
+	int y = open(file, O_RDWR);
 	const size_t data_size = 100;
 	char data[data_size];
 	const size_t size = 5;
 	char d[size];
 	char* p;
 	int x, num_bytes_read = 1;
-	int y = open(file, O_RDWR);
 	int backup = open(d_arg,  O_RDWR | O_CREAT | O_TRUNC, 
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 	while(num_bytes_read != 0){
