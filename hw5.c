@@ -44,7 +44,7 @@ int main(int argc, char* argv[]){
 	const size_t size = 5;
 	char d[size];
 	char* p;
-	sprintf(buffer, "_rev%d",rev);
+	sprintf(buffer, "%s_rev%d",file, rev);
 	int x, num_bytes_read = 1;
 	int backup = open(buffer,  O_RDWR | O_CREAT | O_TRUNC, 
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
@@ -52,7 +52,9 @@ int main(int argc, char* argv[]){
 		num_bytes_read = read(y, d, size);
 		write(backup, d, num_bytes_read);
 	}
+	printf("%s has been backuped to %s\n", file, buffer);
 	rev++;
+	sprintf(buffer, "%s_rev%d", file, rev);
 	close(y);
 	close(backup);
 	while(1){
@@ -63,7 +65,7 @@ int main(int argc, char* argv[]){
 				backup = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 
 					S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 				num_bytes_read = 1;
-				printf("The file has been modified.\n");
+				printf("The file has been modified.\n%s has been backuped to %s\nc", file, buffer);
 				y = open(file, O_RDWR);
 				while(num_bytes_read != 0){
 					num_bytes_read = read(y, d, size);
@@ -72,7 +74,7 @@ int main(int argc, char* argv[]){
 				close(y);
 				close(backup);
 				rev++;
-				sprintf(buffer, "_rev%d",rev);
+				sprintf(buffer, "%s_rev%d", file, rev);
 			}
 			p += sizeof(struct inotify_event) + event->len;
 		}
