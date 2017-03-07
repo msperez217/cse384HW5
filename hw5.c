@@ -52,7 +52,7 @@ int main(int argc, char* argv[]){
 
 	char* file = argv[optind];
 	int fd = inotify_init();
-	int wd = inotify_add_watch(fd, file, IN_MODIFY);
+	int wd = inotify_add_watch(fd, file,IN_DELETE, IN_MODIFY);
 
 	if(fd == -1){
 		perror("inotify_init");
