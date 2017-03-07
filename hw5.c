@@ -31,20 +31,46 @@ int main(int argc, char* argv[]){
 		}
 		opt = getopt(argc, argv, "hd:mt");
 	}
+
+	if(enable_h == true){
+		printf("This program copies files. This program accepts four arguments from the commandline."
+			"These options are H, D, M, and T. H option is how you got here and helps you understand "
+			"the program. D allows the user to choosed the backup location of the file. M disables "
+			"meta-data duplication. T adds the duplication time to the file.\n");
+		return EXIT_SUCCESS;
+	}
+
+	if(enable_m == true){
+
+	}
+
+	if(enable_t == true){
+		
+	}
+
+
+
 	char* file = argv[optind];
 	int fd = inotify_init();
 	int wd = inotify_add_watch(fd, file, IN_MODIFY);
+
+	if(fd == -1){
+		perror("inotify_init");
+		return EXIT_FAILURE;
+	}
+
 	if(wd == -1){
 		perror("inotify_add_watch");
 		return EXIT_FAILURE;
 	}
+
 	int y = open(file, O_RDWR);
 	const size_t data_size = 100;
 	char data[data_size];
 	const size_t size = 5;
 	char d[size];
 	char* p;
-	sprintf(buffer, "%s_rev%d",file, rev);
+	sprintf(buffer, "_rev%d",rev);
 	int x, num_bytes_read = 1;
 	int backup = open(buffer,  O_RDWR | O_CREAT | O_TRUNC, 
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
@@ -52,9 +78,7 @@ int main(int argc, char* argv[]){
 		num_bytes_read = read(y, d, size);
 		write(backup, d, num_bytes_read);
 	}
-	printf("%s has been backuped to %s\n", file, buffer);
 	rev++;
-	sprintf(buffer, "%s_rev%d", file, rev);
 	close(y);
 	close(backup);
 	while(1){
@@ -65,7 +89,7 @@ int main(int argc, char* argv[]){
 				backup = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 
 					S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 				num_bytes_read = 1;
-				printf("The file has been modified.\n%s has been backuped to %s\nc", file, buffer);
+				printf("The file has been modified.\n");
 				y = open(file, O_RDWR);
 				while(num_bytes_read != 0){
 					num_bytes_read = read(y, d, size);
@@ -74,7 +98,7 @@ int main(int argc, char* argv[]){
 				close(y);
 				close(backup);
 				rev++;
-				sprintf(buffer, "%s_rev%d", file, rev);
+				sprintf(buffer, "_rev%d",rev);
 			}
 			p += sizeof(struct inotify_event) + event->len;
 		}
