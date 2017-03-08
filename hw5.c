@@ -31,12 +31,13 @@ int main(int argc, char* argv[]){
 		}
 		opt = getopt(argc, argv, "hd:mt");
 	}
-
 	if(enable_h == true){
-		printf("This program copies files. This program accepts four arguments from the commandline."
-			"These options are H, D, M, and T. H option is how you got here and helps you understand "
-			"the program. D allows the user to choosed the backup location of the file. M disables "
-			"meta-data duplication. T adds the duplication time to the file.\n");
+		printf("-------------------------------------------------------------\n");
+		printf("This program maintains a backup of a file.\nIt takes a file name and its path as an argument.\nIt also accepts four options.\n"
+			"These options are h, d, m, and y. The -h option gives you more info about the program and will terminate it once its done\n"
+			"The -d option accepts an argument that allows the user to choose the backup location of the file.\nThe -m option disables "
+			"meta-data duplication.\nThe -t option will append the duplication time to the file name.\n");
+		printf("-------------------------------------------------------------\n");
 		return EXIT_SUCCESS;
 	}
 
@@ -52,7 +53,7 @@ int main(int argc, char* argv[]){
 
 	char* file = argv[optind];
 	int fd = inotify_init();
-	int wd = inotify_add_watch(fd, file,IN_DELETE, IN_MODIFY);
+	int wd = inotify_add_watch(fd, file,IN_DELETE | IN_MODIFY);
 
 	if(fd == -1){
 		perror("inotify_init");
