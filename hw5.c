@@ -71,7 +71,7 @@ int main(int argc, char* argv[]){
 	const size_t size = 5;
 	char d[size];
 	char* p;
-	sprintf(buffer, "_rev%d",rev);
+	sprintf(buffer, "%s_rev%d",file,rev);
 	int x, num_bytes_read = 1;
 	int backup = open(buffer,  O_RDWR | O_CREAT | O_TRUNC, 
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
@@ -79,7 +79,6 @@ int main(int argc, char* argv[]){
 		num_bytes_read = read(y, d, size);
 		write(backup, d, num_bytes_read);
 	}
-	rev++;
 	close(y);
 	close(backup);
 	while(1){
@@ -87,6 +86,8 @@ int main(int argc, char* argv[]){
 		for(p = data; p < data + x;){
 			struct inotify_event* event = (struct inotify_event*)p;
 			if((event->mask & IN_MODIFY) != 0){
+				rev++;
+				sprintf(buffer, "%s_rev%d",file, rev);
 				backup = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 
 					S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 				num_bytes_read = 1;
@@ -98,8 +99,6 @@ int main(int argc, char* argv[]){
 				}
 				close(y);
 				close(backup);
-				rev++;
-				sprintf(buffer, "_rev%d",rev);
 			}
 			p += sizeof(struct inotify_event) + event->len;
 		}
