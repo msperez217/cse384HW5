@@ -83,6 +83,10 @@ int main(int argc, char* argv[]){
 	close(backup);
 	while(1){
 		x = read(fd, data, data_size);
+		if(access(file, F_OK) == -1){
+			PRINTF("The file has been deleted. No more backups will be made.\n");
+			return EXIT_FAILURE;
+		}
 		for(p = data; p < data + x;){
 			struct inotify_event* event = (struct inotify_event*)p;
 			if((event->mask & IN_MODIFY) != 0){
