@@ -48,6 +48,7 @@ int main(int argc, char* argv[]){
 			"Otherwise the backup files will be stored where the original file is located.\n"
 			"The -m option disables meta-data duplication.\nThe -t option will append the duplication time to the file name.\n");
 		printf("-------------------------------------------------------------\n");
+		free(d_arg);
 		return EXIT_SUCCESS;
 	}
 
@@ -62,8 +63,7 @@ int main(int argc, char* argv[]){
 
 	}
 	if(argv[optind] == NULL){
-		printf("No argument given.\n");
-		printf("Program Name: %s\n", argv[0]);
+		printf("Usage: %s\n FILENAME", argv[0]);
 		return EXIT_SUCCESS;
 	}
 
@@ -122,6 +122,8 @@ int main(int argc, char* argv[]){
 		perror("open");
 		return EXIT_FAILURE;
 	}
+	char* location = strdup(file_loc);
+	printf("Backing up %s to %s as %s\n", file_name, dirname(location), basename(backupFile));
 
 	int num_bytes_read = 1;
 	while(num_bytes_read != 0){
@@ -169,8 +171,6 @@ int main(int argc, char* argv[]){
 		}
 	}
 
-	printf("The backup file was sent to %s\n", backupFile);
-
 	int x;
 	while(1){
 		x = read(fd, data, data_size);
@@ -209,6 +209,8 @@ int main(int argc, char* argv[]){
 					perror("open");
 					return EXIT_FAILURE;
 				}
+
+				printf("Backing up %s to %s as %s\n", file_name, location, basename(backupFile));
 
 				num_bytes_read = 1;
 				while(num_bytes_read != 0){
@@ -255,11 +257,11 @@ int main(int argc, char* argv[]){
 						return EXIT_FAILURE;
 					}
 				}
-				printf("The backup file was sent to %s\n", backupFile);
 			}
 			p += sizeof(struct inotify_event) + event->len;
 		}
 	}
 	free(d_arg);
+	free(location);
 	return EXIT_SUCCESS;
 }
