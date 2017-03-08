@@ -9,11 +9,11 @@
 #include <errno.h>
 
 int main(int argc, char* argv[]){
-	bool enable_h = false, enable_m = false, enable_t = false;
+	bool enable_h = false, enable_m = false, enable_t = false, enable_d_arg = false, enable_error = false;
 	char* d_arg = NULL;
 	int rev = 0;
 	char buffer[50];
-	int opt = getopt(argc, argv, "hd:mt");
+	int opt = getopt(argc, argv, ":hd:mt");
 	while(opt != -1){
 		switch(opt){
 			case 'h':
@@ -28,8 +28,14 @@ int main(int argc, char* argv[]){
 			case 't':
 			enable_t = true;
 			break;
+			case ':':
+			enable_d_arg = true;
+			break;
+			default:
+			enable_error = true;
+			break;
 		}
-		opt = getopt(argc, argv, "hd:mt");
+		opt = getopt(argc, argv, ":hd:mt");
 	}
 	if(enable_h == true){
 		printf("-------------------------------------------------------------\n");
@@ -41,15 +47,20 @@ int main(int argc, char* argv[]){
 		return EXIT_SUCCESS;
 	}
 
-	if(enable_m == true){
-
+	if(enable_error == true){
+		printf("ERROR: Invalid option found. Valid options are h, d, m, and t.\n");
+		return EXIT_FAILURE;
 	}
 
-	if(enable_t == true){
-		
+	if(enable_d_arg == true){
+		printf("ERROR: Option -d requires an argument.\n");
+		return EXIT_FAILURE;
 	}
-
-
+	if(argv[optind] == NULL){
+		printf("No argument given.\n");
+		printf("Program Name: %s\n", argv[0]);
+		return EXIT_SUCCESS;
+	}
 
 	char* file = argv[optind];
 	int fd = inotify_init();
@@ -84,7 +95,7 @@ int main(int argc, char* argv[]){
 	while(1){
 		x = read(fd, data, data_size);
 		if(access(file, F_OK) == -1){
-			PRINTF("The file has been deleted. No more backups will be made.\n");
+			printf("The file has been deleted. No more backups will be made.\n");
 			return EXIT_FAILURE;
 		}
 		for(p = data; p < data + x;){
