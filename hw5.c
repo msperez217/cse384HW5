@@ -40,10 +40,13 @@ int main(int argc, char* argv[]){
 	}
 	if(enable_h == true){
 		printf("-------------------------------------------------------------\n");
-		printf("This program maintains a backup of a file.\nIt takes a file name and its path as an argument.\nIt also accepts four options.\n"
-			"These options are h, d, m, and y. The -h option gives you more info about the program and will terminate it once its done\n"
-			"The -d option accepts an argument that allows the user to choose the backup location of the file.\nThe -m option disables "
-			"meta-data duplication.\nThe -t option will append the duplication time to the file name.\n");
+		printf("This program maintains a backup of a file.\nEverytime the file is modified a new backup file will be made.\n"
+			"It takes a file name and its path as an argument.\n"
+			"It also accepts four options (h, d, m, and t).\n"
+			"The -h option gives you more info about the program and will terminate it once its done\n"
+			"The -d option accepts an argument that changes the location of the backup file.\n"
+			"Otherwise the backup files will be stored where the original file is located.\n"
+			"The -m option disables meta-data duplication.\nThe -t option will append the duplication time to the file name.\n");
 		printf("-------------------------------------------------------------\n");
 		return EXIT_SUCCESS;
 	}
@@ -99,10 +102,6 @@ int main(int argc, char* argv[]){
 
 	if(enable_t == true){
 		time_t tim = time(NULL);
-		if((int)time == -1){
-			perror("time");
-			return EXIT_FAILURE;
-		}
 		struct tm appendTime = *localtime(&tim);
 		snprintf(backupFile, 100,"%s_%d%d%d%d%d%d", file_loc, appendTime.tm_year + 1900, appendTime.tm_mon + 1, appendTime.tm_mday,
 			appendTime.tm_hour, appendTime.tm_min, appendTime.tm_sec);
@@ -111,8 +110,6 @@ int main(int argc, char* argv[]){
 	else{
 		snprintf(backupFile, 100, "%s_rev%d",file_loc, rev);
 	}
-
-	int x, num_bytes_read = 1;
 
 	int backup = open(backupFile,  O_RDWR | O_CREAT | O_TRUNC, 
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
@@ -125,6 +122,8 @@ int main(int argc, char* argv[]){
 		perror("open");
 		return EXIT_FAILURE;
 	}
+
+	int num_bytes_read = 1;
 	while(num_bytes_read != 0){
 		num_bytes_read = read(y, d, size);
 		if(num_bytes_read == -1){
@@ -136,6 +135,7 @@ int main(int argc, char* argv[]){
 			return EXIT_FAILURE;
 		}
 	}
+
 	if(close(y) == -1){
 		perror("close");
 		return EXIT_FAILURE;
@@ -170,6 +170,8 @@ int main(int argc, char* argv[]){
 	}
 
 	printf("The backup file was sent to %s\n", backupFile);
+
+	int x;
 	while(1){
 		x = read(fd, data, data_size);
 		if(x == -1){
@@ -185,10 +187,6 @@ int main(int argc, char* argv[]){
 			if((event->mask & IN_MODIFY) != 0){
 				if(enable_t == true){
 					time_t tim = time(NULL);
-					if((int)time == -1){
-						perror("time");
-						return EXIT_FAILURE;
-					}
 					struct tm appendTime = *localtime(&tim);
 					snprintf(backupFile, 100,"%s_%d%d%d%d%d%d", file_loc, appendTime.tm_year + 1900, appendTime.tm_mon + 1, appendTime.tm_mday,
 						appendTime.tm_hour, appendTime.tm_min, appendTime.tm_sec);
@@ -204,7 +202,7 @@ int main(int argc, char* argv[]){
 					perror("open");
 					return EXIT_FAILURE;
 				}
-				num_bytes_read = 1;
+
 				y = open(file, O_RDWR);
 
 				if(y == -1){
@@ -212,6 +210,7 @@ int main(int argc, char* argv[]){
 					return EXIT_FAILURE;
 				}
 
+				num_bytes_read = 1;
 				while(num_bytes_read != 0){
 					num_bytes_read = read(y, d, size);
 					if(num_bytes_read == -1){
