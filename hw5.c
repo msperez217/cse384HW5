@@ -7,12 +7,12 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <libgen.h>
+#include <time.h>
 
 int main(int argc, char* argv[]){
 	bool enable_h = false, enable_m = false, enable_t = false, enable_d_arg = false, enable_error = false;
 	char* d_arg = NULL;
 	int rev = 0;
-	char buffer[50];
 	int opt = getopt(argc, argv, ":hd:mt");
 	while(opt != -1){
 		switch(opt){
@@ -88,25 +88,41 @@ int main(int argc, char* argv[]){
 	else{
 		snprintf(file_loc, 100,"%s/%s",d_arg,file_name);
 	}
-	printf("File was sent to %s\n", file_loc);
 
-
-	int y = open(file, O_RDWR);
 	const size_t data_size = 100;
 	char data[data_size];
 	const size_t size = 5;
 	char d[size];
 	char* p;
-	sprintf(buffer, "%s_rev%d",file_loc,rev);
+	char backupFile[100];
+
+	if(enable_t == true){
+		time_t tim = time(NULL);
+		if((int)time == -1){
+			perror("time");
+			return EXIT_FAILURE;
+		}
+		struct tm appendTime = *localtime(&tim);
+		snprintf(backupFile, 100,"%s_%d%d%d%d%d%d", file_loc, appendTime.tm_year + 1900, appendTime.tm_mon + 1, appendTime.tm_mday,
+			appendTime.tm_hour, appendTime.tm_min, appendTime.tm_sec);
+	}
+	else{
+		snprintf(backupFile, 100, "%s_rev%d",file_loc, rev);
+	}
+
 	int x, num_bytes_read = 1;
-	int backup = open(buffer,  O_RDWR | O_CREAT | O_TRUNC, 
+
+	int backup = open(backupFile,  O_RDWR | O_CREAT | O_TRUNC, 
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+	int y = open(file, O_RDWR);
+
 	while(num_bytes_read != 0){
 		num_bytes_read = read(y, d, size);
 		write(backup, d, num_bytes_read);
 	}
 	close(y);
 	close(backup);
+	printf("The backup file was sent to %s\n", backupFile);
 	while(1){
 		x = read(fd, data, data_size);
 		if(access(file, F_OK) == -1){
@@ -116,12 +132,23 @@ int main(int argc, char* argv[]){
 		for(p = data; p < data + x;){
 			struct inotify_event* event = (struct inotify_event*)p;
 			if((event->mask & IN_MODIFY) != 0){
-				rev++;
-				sprintf(buffer, "%s_rev%d",file_loc, rev);
-				backup = open(buffer, O_RDWR | O_CREAT | O_TRUNC, 
+				if(enable_t == true){
+					time_t tim = time(NULL);
+					if((int)time == -1){
+						perror("time");
+						return EXIT_FAILURE;
+					}
+					struct tm appendTime = *localtime(&tim);
+					snprintf(backupFile, 100,"%s_%d%d%d%d%d%d", file_loc, appendTime.tm_year + 1900, appendTime.tm_mon + 1, appendTime.tm_mday,
+						appendTime.tm_hour, appendTime.tm_min, appendTime.tm_sec);
+				}
+				else{
+					rev++;
+					snprintf(backupFile, 100, "%s_rev%d",file_loc, rev);
+				}
+				backup = open(backupFile, O_RDWR | O_CREAT | O_TRUNC, 
 					S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
 				num_bytes_read = 1;
-				printf("The file has been modified.\n");
 				y = open(file, O_RDWR);
 				while(num_bytes_read != 0){
 					num_bytes_read = read(y, d, size);
@@ -129,9 +156,10 @@ int main(int argc, char* argv[]){
 				}
 				close(y);
 				close(backup);
+				printf("The backup file was sent to %s\n", backupFile);
 			}
 			p += sizeof(struct inotify_event) + event->len;
 		}
 	}
-	close(fd);
+	free(d_arg);
 }
