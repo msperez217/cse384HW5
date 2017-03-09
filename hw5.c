@@ -107,6 +107,7 @@ int main(int argc, char* argv[]){
 		snprintf(backupFile, 100,"%s_%d%d%d%d%d%d", file_loc, appendTime.tm_year + 1900, appendTime.tm_mon + 1, appendTime.tm_mday,
 			appendTime.tm_hour, appendTime.tm_min, appendTime.tm_sec);
 	}
+
 	else{
 		snprintf(backupFile, 100, "%s_rev%d",file_loc, rev);
 	}
@@ -115,14 +116,35 @@ int main(int argc, char* argv[]){
 
 	int backup = open(backupFile,  O_RDWR | O_CREAT | O_TRUNC, 
 		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+	if(backup == -1){
+		perror("open");
+		return EXIT_FAILURE;
+	}
 	int y = open(file, O_RDWR);
-
+	if(y == -1){
+		perror("open");
+		return EXIT_FAILURE;
+	}
 	while(num_bytes_read != 0){
 		num_bytes_read = read(y, d, size);
-		write(backup, d, num_bytes_read);
+		if(num_bytes_read == -1){
+			perror("read");
+			return EXIT_FAILURE;
+		}
+		if(write(backup, d, num_bytes_read) == -1){
+			perror("write");
+			return EXIT_FAILURE;
+		}
 	}
-	close(y);
-	close(backup);
+	if(close(y) == -1){
+		perror("close");
+		return EXIT_FAILURE;
+	}
+	
+	if(close(backup) == -1){
+		perror("close");
+		return EXIT_FAILURE;
+	}
 
 	if(enable_m == false){
 		struct stat file_stat;
@@ -150,6 +172,10 @@ int main(int argc, char* argv[]){
 	printf("The backup file was sent to %s\n", backupFile);
 	while(1){
 		x = read(fd, data, data_size);
+		if(x == -1){
+			perror("read");
+			return EXIT_FAILURE;
+		}
 		if(access(file, F_OK) == -1){
 			printf("The file has been deleted. No more backups will be made.\n");
 			return EXIT_FAILURE;
@@ -173,14 +199,41 @@ int main(int argc, char* argv[]){
 				}
 				backup = open(backupFile, O_RDWR | O_CREAT | O_TRUNC, 
 					S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+
+				if(backup == -1){
+					perror("open");
+					return EXIT_FAILURE;
+				}
 				num_bytes_read = 1;
 				y = open(file, O_RDWR);
+
+				if(y == -1){
+					perror("open");
+					return EXIT_FAILURE;
+				}
+
 				while(num_bytes_read != 0){
 					num_bytes_read = read(y, d, size);
-					write(backup, d, num_bytes_read);
+					if(num_bytes_read == -1){
+						perror("read");
+						return EXIT_FAILURE;
+					}
+					if(write(backup, d, num_bytes_read) == -1){
+						perror("write");
+						return EXIT_FAILURE;
+					}
 				}
-				close(y);
-				close(backup);
+
+				if(close(y) == -1){
+					perror("close");
+					return EXIT_FAILURE;
+				}
+
+				if(close(backup) == -1){
+					perror("close");
+					return EXIT_FAILURE;
+				}
+
 				if(enable_m == false){
 					struct stat file_stat;
 					struct utimbuf time_f;
@@ -209,4 +262,5 @@ int main(int argc, char* argv[]){
 		}
 	}
 	free(d_arg);
+	return EXIT_SUCCESS;
 }
