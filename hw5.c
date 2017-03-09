@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <libgen.h>
 #include <time.h>
+#include <utime.h>
 
 int main(int argc, char* argv[]){
 	bool enable_h = false, enable_m = false, enable_t = false, enable_d_arg = false, enable_error = false;
@@ -122,6 +123,30 @@ int main(int argc, char* argv[]){
 	}
 	close(y);
 	close(backup);
+
+	if(enable_m == false){
+		struct stat file_stat;
+		struct utimbuf time_f;
+		if(stat(file, &file_stat) == -1){
+			perror("stat");
+			return EXIT_FAILURE;
+		}
+		if(chown(backupFile,file_stat.st_uid,file_stat.st_gid) == -1){
+			perror("chown");
+			return EXIT_FAILURE;
+		}
+		if(chmod(backupFile,file_stat.st_mode) == -1){
+			perror("chmod");
+			return EXIT_FAILURE;
+		}
+		time_f.actime = file_stat.st_atim.tv_sec;
+		time_f.modtime = file_stat.st_mtim.tv_sec;
+		if(utime(backupFile, &time_f) == -1){
+			perror("utime");
+			return EXIT_FAILURE;
+		}
+	}
+
 	printf("The backup file was sent to %s\n", backupFile);
 	while(1){
 		x = read(fd, data, data_size);
@@ -156,6 +181,28 @@ int main(int argc, char* argv[]){
 				}
 				close(y);
 				close(backup);
+				if(enable_m == false){
+					struct stat file_stat;
+					struct utimbuf time_f;
+					if(stat(file, &file_stat) == -1){
+						perror("stat");
+						return EXIT_FAILURE;
+					}
+					if(chown(backupFile,file_stat.st_uid,file_stat.st_gid) == -1){
+						perror("chown");
+						return EXIT_FAILURE;
+					}
+					if(chmod(backupFile,file_stat.st_mode) == -1){
+						perror("chmod");
+						return EXIT_FAILURE;
+					}
+					time_f.actime = file_stat.st_atim.tv_sec;
+					time_f.modtime = file_stat.st_mtim.tv_sec;
+					if(utime(backupFile, &time_f) == -1){
+						perror("utime");
+						return EXIT_FAILURE;
+					}
+				}
 				printf("The backup file was sent to %s\n", backupFile);
 			}
 			p += sizeof(struct inotify_event) + event->len;
