@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
 
 	}
 	if(argv[optind] == NULL){
-		printf("Usage: %s\n FILENAME", argv[0]);
+		printf("Usage: %s FILENAME\n", argv[0]);
 		return EXIT_SUCCESS;
 	}
 
