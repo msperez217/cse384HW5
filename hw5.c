@@ -69,7 +69,7 @@ int main(int argc, char* argv[]){
 
 	char* file = argv[optind];
 	int fd = inotify_init();
-	int wd = inotify_add_watch(fd, file,IN_DELETE | IN_MODIFY);
+	int wd = inotify_add_watch(fd, file,IN_ATTRIB | IN_MODIFY);
 
 	if(fd == -1){
 		perror("inotify_init");
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]){
 		snprintf(file_loc, 100,"%s/%s",d_arg,file_name);
 	}
 
-	const size_t data_size = 100;
+	const size_t data_size = 1000;
 	char data[data_size];
 	const size_t size = 5;
 	char d[size];
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]){
 	}
 
 	int backup = open(backupFile,  O_RDWR | O_CREAT | O_TRUNC, 
-		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+		S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 	if(backup == -1){
 		perror("open");
 		return EXIT_FAILURE;
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]){
 		return EXIT_FAILURE;
 	}
 	char* location = strdup(file_loc);
-	printf("Backing up %s to %s as %s\n", file_name, dirname(location), basename(backupFile));
+	printf("The file backups are located in %s\n", dirname(location));
 
 	int num_bytes_read = 1;
 	while(num_bytes_read != 0){
@@ -184,6 +184,31 @@ int main(int argc, char* argv[]){
 		}
 		for(p = data; p < data + x;){
 			struct inotify_event* event = (struct inotify_event*)p;
+			if(enable_m == false){
+				if((event->mask & IN_ATTRIB) != 0){
+					struct stat file_stat;
+					struct utimbuf time_f;
+					if(stat(file, &file_stat) == -1){
+						perror("stat");
+						return EXIT_FAILURE;
+					}
+					if(chown(backupFile,file_stat.st_uid,file_stat.st_gid) == -1){
+						perror("chown");
+						return EXIT_FAILURE;
+					}
+					if(chmod(backupFile,file_stat.st_mode) == -1){
+						perror("chmod");
+						return EXIT_FAILURE;
+					}
+					time_f.actime = file_stat.st_atim.tv_sec;
+					time_f.modtime = file_stat.st_mtim.tv_sec;
+					if(utime(backupFile, &time_f) == -1){
+						perror("utime");
+						return EXIT_FAILURE;
+					}
+				
+				}
+			}
 			if((event->mask & IN_MODIFY) != 0){
 				if(enable_t == true){
 					time_t tim = time(NULL);
@@ -196,7 +221,7 @@ int main(int argc, char* argv[]){
 					snprintf(backupFile, 100, "%s_rev%d",file_loc, rev);
 				}
 				backup = open(backupFile, O_RDWR | O_CREAT | O_TRUNC, 
-					S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+					S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
 
 				if(backup == -1){
 					perror("open");
@@ -209,8 +234,6 @@ int main(int argc, char* argv[]){
 					perror("open");
 					return EXIT_FAILURE;
 				}
-
-				printf("Backing up %s to %s as %s\n", file_name, location, basename(backupFile));
 
 				num_bytes_read = 1;
 				while(num_bytes_read != 0){
